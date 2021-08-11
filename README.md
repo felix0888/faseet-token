@@ -71,5 +71,19 @@ validate votepower for lucy: 0
 validate votePower of lucy: 5
 4. bob receives 10 tokens
 validate vote power of lucy: 10
+```
 
+## Deploy & Test
+#### Installation
+````
+npm install
+npx hardhat node
+````
+#### Deploy
+```
+npx hardhat run --network [NETWORK-NAME] scripts/deploy.js
+```
+#### Run the test scripts
+```
+npx hardhat test
 ```
