@@ -4,6 +4,7 @@ pragma solidity ^0.7.6;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "hardhat/console.sol";
 
 
 contract FAssetToken is ERC20("FAsset", "FAT"), Ownable {
@@ -42,8 +43,8 @@ contract FAssetToken is ERC20("FAsset", "FAT"), Ownable {
 
     function transfer(address _recipient, uint256 _amount) public override returns (bool) {
         _transfer(_msgSender(), _recipient, _amount);
-        updateBalanceAndVotePower(_recipient, _amount, true);
         updateBalanceAndVotePower(_msgSender(), _amount, false);
+        updateBalanceAndVotePower(_recipient, _amount, true);
         return true;
     }
 
@@ -66,7 +67,7 @@ contract FAssetToken is ERC20("FAsset", "FAT"), Ownable {
                     delete delegators[i];
                     delete delegation.delegationPercentage[_delegator];
                 } else {
-                    require(delegation.percentageRemaining >= _percentage, "FAsset: not enough percentage to delegate.");
+                    require(delegation.percentageRemaining >= _percentage, "FAsset: insufficient percentage to delegate.");
                     delegation.percentageRemaining = uint8(delegation.percentageRemaining.sub(_percentage));
                     delegation.delegationPercentage[_delegator] = uint8(delegation.delegationPercentage[_delegator].add(_percentage));
                     votePower = balanceOfAt(msg.sender, blockNumber).mul(_percentage).div(100);
@@ -79,7 +80,7 @@ contract FAssetToken is ERC20("FAsset", "FAT"), Ownable {
         require(delegatorsLen < 5, "FAsset: maximum delegators.");
         if (delegatorsLen == 0)
             delegation.percentageRemaining = 100;
-        require(delegation.percentageRemaining >= _percentage, "FAsset: not enough percentage to delegate.");
+        require(delegation.percentageRemaining >= _percentage, "FAsset: insufficient percentage to delegate.");
         delegators.push(_delegator);
         delegation.percentageRemaining = uint8(delegation.percentageRemaining.sub(_percentage));
         delegation.delegationPercentage[_delegator] = _percentage;
@@ -98,7 +99,7 @@ contract FAssetToken is ERC20("FAsset", "FAT"), Ownable {
 
     function updateBalanceAndVotePower(address _owner, uint256 _amountChange, bool _isAdd) private {
         updateBalance(_owner, _amountChange, _isAdd);
-        updateVotePower(_owner, _amountChange, _isAdd);
+        updateVotePowers(_owner, _amountChange, _isAdd);
     }
 
     function updateBalance(address _owner, uint256 _amountChange, bool _isAdd) private {
@@ -139,7 +140,7 @@ contract FAssetToken is ERC20("FAsset", "FAT"), Ownable {
     }
 
     function valueAt(CheckPoint[] storage _checkPoints, uint256 _blockNumber) private view returns (uint256) {
-        uint256 checkPointsLen;
+        uint256 checkPointsLen = _checkPoints.length;
         if (checkPointsLen == 0) return 0;
         if (_blockNumber >= _checkPoints[checkPointsLen - 1].fromBlock)
             return _checkPoints[checkPointsLen - 1].value;
